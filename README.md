@@ -5,7 +5,7 @@
 
 **Maximize your TSP without losing your Marine Corps match.**
 
-[🚀 Open the Live App](https://[your-username].github.io/tsp-calculator/)
+[🚀 Open the Live App](https://famouspunk4.github.io/tspmaxer/)
 
 ## 📖 Overview
 
