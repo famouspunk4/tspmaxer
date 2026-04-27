@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSP MAXER PRO</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4b5320; /* Marine Olive */
+            --secondary: #2c3e50;
+            --accent: #27ae60; /* Success Green */
+            --error: #c0392b;
+            --bg: #f4f7f6;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .limit-header { text-align: center; color: #666; margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+        
+        .status-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .status-item { background: #eee; padding: 10px; border-radius: 6px; text-align: center; font-size: 0.8em; font-weight: bold; }
+        .status-item.active { background: var(--accent); color: white; }
+        .match-alert { grid-column: span 3; background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; display: none; }
+
+        .main-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+        label { font-weight: bold; margin-bottom: 5px; font-size: 0.85em; color: var(--secondary); }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        
+        #error-msg { color: var(--error); font-weight: bold; text-align: center; margin-top: 10px; display: none; }
+
+        .results-panel { display: flex; flex-direction: column; gap: 15px; }
+        .card { padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
+        .card.primary { background: var(--primary); color: white; }
+        .card.accent { background: var(--accent); color: white; }
+        .val { font-size: 1.8em; font-weight: bold; display: block; margin: 5px 0; }
+        
+        .tracker-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
+        .tracker-table th { background: #eee; padding: 8px; text-align: left; }
+        .tracker-table td { padding: 4px; border-bottom: 1px solid #eee; }
+        .tracker-table input { width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid transparent; }
+        .filled { background: #e8f5e9; }
+        .over-limit { background: #fadbd8 !important; }
+
+        .chart-container { margin-top: 20px; height: 350px; }
+        @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } .status-bar { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>TSP MAXER PRO</h1>
+    <p class="limit-header">2026 Elective Deferral Limit: $24,500.00</p>
+
+    <div class="status-bar">
+        <div id="status-tis" class="status-item">TIS: 2+ Years? <input type="checkbox" id="tisCheck" onchange="calculate()"></div>
+        <div id="status-contrib" class="status-item">Contributing: 5%+?</div>
+        <div id="status-match" class="status-item">Matching Active?</div>
+        <div id="match-notif" class="match-alert">ELIGIBLE FOR GOVERNMENT MATCHING (5%)</div>
+    </div>
+
+    <div id="error-msg">⚠️ TOTAL EXCEEDS $24,500 LIMIT</div>
+
+    <div class="main-layout">
+        <div class="input-section">
+            <div class="input-group">
+                <label>Current TSP Balance ($)</label>
+                <input type="number" id="startBalance" value="0" max="999999" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Monthly Basic Pay ($)</label>
+                <input type="number" id="basePay" value="0" max="99999" oninput="limitDigits(this); calculate()">
+            </div>
+            
+            <table class="tracker-table" id="tracker">
+                <thead><tr><th>Month</th><th>Contrib ($)</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div style="text-align: right; font-weight: bold; margin-top: 10px;">
+                Total YTD: <span id="ytdTotal">$0.00</span>
+            </div>
+        </div>
+
+        <div class="results-panel">
+            <div class="card primary" id="leftCard">
+                <label style="color: rgba(255,255,255,0.8)">Remaining to Max</label>
+                <span class="val" id="amtLeft">$0.00</span>
+            </div>
+            
+            <div class="card accent">
+                <label style="color: rgba(255,255,255,0.8)">Recommended myPay %</label>
+                <span class="val" id="percentReq">0%</span>
+                <small id="monthlyVal">($0.00 / month)</small>
+            </div>
+
+            <div class="input-group">
+                <label>TSP Fund Selection</label>
+                <select id="fundSelect" onchange="updateROI()">
+                    <option value="10" selected>Custom (10%)</option>
+                    <option value="4.81">G Fund (4.81%)</option>
+                    <option value="5.39">F Fund (5.39%)</option>
+                    <option value="11.23">C Fund (11.23%)</option>
+                    <option value="8.94">S Fund (8.94%)</option>
+                    <option value="5.14">I Fund (5.14%)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Annual Return (%)</label>
+                <input type="number" id="roi" value="10" step="0.1" oninput="calculate()">
+            </div>
+
+            <div class="chart-container">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const LIMIT = 24500;
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let chart;
+
+    const tbody = document.querySelector('#tracker tbody');
+    months.forEach((m, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${m}</td><td><input type="number" class="month-input" data-index="${i}" max="99999" oninput="limitDigits(this); calculate()"></td>`;
+        tbody.appendChild(row);
+    });
+
+    function limitDigits(el) {
+        if (el.value > 99999) el.value = 99999;
+    }
+
+    function updateROI() {
+        document.getElementById('roi').value = document.getElementById('fundSelect').value;
+        calculate();
+    }
+
+    function calculate() {
+        const startBal = parseFloat(document.getElementById('startBalance').value) || 0;
+        const basePay = parseFloat(document.getElementById('basePay').value) || 0;
+        const roi = (parseFloat(document.getElementById('roi').value) || 0) / 100;
+        const tisEligible = document.getElementById('tisCheck').checked;
+        const inputs = document.querySelectorAll('.month-input');
+        
+        let ytd = 0;
+        let lastFilledIndex = -1;
+        const monthlyValues = [];
+        let contributingFivePercent = false;
+
+        inputs.forEach((input, i) => {
+            const val = parseFloat(input.value) || 0;
+            monthlyValues.push(val);
+            if (val > 0) {
+                ytd += val;
+                input.parentElement.parentElement.classList.add('filled');
+                lastFilledIndex = i;
+                if (basePay > 0 && (val / basePay) >= 0.05) contributingFivePercent = true;
+            } else {
+                input.parentElement.parentElement.classList.remove('filled');
+            }
+        });
+
+        const errorMsg = document.getElementById('error-msg');
+        if (ytd > LIMIT) {
+            errorMsg.style.display = 'block';
+            document.getElementById('leftCard').style.background = 'var(--error)';
+        } else {
+            errorMsg.style.display = 'none';
+            document.getElementById('leftCard').style.background = 'var(--primary)';
+        }
+
+        const statusTis = document.getElementById('status-tis');
+        const statusContrib = document.getElementById('status-contrib');
+        const statusMatch = document.getElementById('status-match');
+        const matchNotif = document.getElementById('match-notif');
+        tisEligible ? statusTis.classList.add('active') : statusTis.classList.remove('active');
+        contributingFivePercent ? statusContrib.classList.add('active') : statusContrib.classList.remove('active');
+
+        if (tisEligible && contributingFivePercent) {
+            statusMatch.classList.add('active');
+            statusMatch.innerText = "Matching Active";
+            matchNotif.style.display = 'block';
+        } else {
+            statusMatch.classList.remove('active');
+            statusMatch.innerText = "Matching Inactive";
+            matchNotif.style.display = 'none';
+        }
+
+        let monthsRemaining = 11 - lastFilledIndex;
+        const left = LIMIT - ytd;
+        const reqMonthly = left / (monthsRemaining || 1);
+        const reqPercent = basePay > 0 ? (reqMonthly / basePay) * 100 : 0;
+
+        document.getElementById('ytdTotal').innerText = `$${ytd.toLocaleString()}`;
+        document.getElementById('amtLeft').innerText = left <= 0 ? "MAXED" : `$${left.toLocaleString()}`;
+        document.getElementById('percentReq').innerText = left <= 0 ? "MAXED" : `${Math.ceil(reqPercent)}%`;
+        document.getElementById('monthlyVal').innerText = left <= 0 ? "" : `($${reqMonthly.toLocaleString()}/mo)`;
+
+        const matchAmount = (tisEligible && contributingFivePercent) ? (basePay * 0.05) : 0;
+        
+        localStorage.setItem('tsp_pro_data_v3', JSON.stringify({ startBal, basePay, roi: document.getElementById('roi').value, monthlyValues, tisEligible }));
+        updateChart(startBal + ytd, (left > 0 ? reqMonthly : 0) + matchAmount, roi);
+    }
+
+    function updateChart(currentTotal, monthlyIn, rate) {
+        const labels = [];
+        const points = [];
+        let balance = currentTotal;
+        const annualIn = monthlyIn * 12;
+
+        for (let i = 0; i <= 50; i += 5) {
+            labels.push(`Year ${i}`);
+            points.push(Math.round(balance));
+            for(let j=0; j<5; j++) {
+                balance = (balance + annualIn) * (1 + rate);
+            }
+        }
+
+        if (chart) chart.destroy();
+        chart = new Chart(document.getElementById('growthChart'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: '50-Year Growth Projection',
+                    data: points,
+                    borderColor: '#4b5320',
+                    backgroundColor: 'rgba(75, 83, 32, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: { 
+                maintainAspectRatio: false, 
+                scales: { 
+                    y: { ticks: { callback: (v) => '$' + v.toLocaleString() } }
+                }
+            }
+        });
+    }
+
+    window.onload = () => {
+        const saved = localStorage.getItem('tsp_pro_data_v3');
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('startBalance').value = data.startBal || 0;
+            document.getElementById('basePay').value = data.basePay;
+            document.getElementById('roi').value = data.roi;
+            document.getElementById('tisCheck').checked = data.tisEligible;
+            const inputs = document.querySelectorAll('.month-input');
+            data.monthlyValues.forEach((v, i) => { if(v > 0) inputs[i].value = v; });
+        }
+        calculate();
+    }
+</script>
+</body>
+</html>
