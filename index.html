@@ -11,7 +11,7 @@
             --secondary: #2c3e50;
             --accent: #27ae60; /* Success Green */
             --error: #c0392b;
-            --bg: #f4f7f6;
+            --bg: #f4f7f6; /* Background */
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #333; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -58,12 +58,12 @@
 
     <div class="status-bar">
         <div id="status-tis" class="status-item">TIS: 2+ Years? <input type="checkbox" id="tisCheck" onchange="calculate()"></div>
-        <div id="status-contrib" class="status-item">Contrib: 5%+?</div>
+        <div id="status-contrib" class="status-item">Contributing: 5%+?</div>
         <div id="status-match" class="status-item">Matching Active?</div>
         <div id="match-notif" class="match-alert">ELIGIBLE FOR GOVERNMENT MATCHING (5%)</div>
     </div>
 
-    <div id="error-msg">⚠️ TOTAL EXCEEDS 2026 LIMIT ($24,500)</div>
+    <div id="error-msg">⚠️ TOTAL EXCEEDS LIMIT</div>
 
     <div class="main-layout">
         <div class="input-section">
