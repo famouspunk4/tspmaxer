@@ -167,11 +167,11 @@
 
         if (tisEligible && contributingFivePercent) {
             statusMatch.classList.add('active');
-            statusMatch.innerText = "Matching: ACTIVE";
+            statusMatch.innerText = "Matching Active";
             matchNotif.style.display = 'block';
         } else {
             statusMatch.classList.remove('active');
-            statusMatch.innerText = "Matching: INACTIVE";
+            statusMatch.innerText = "Matching Inactive";
             matchNotif.style.display = 'none';
         }
 
@@ -204,10 +204,10 @@
         let balance = currentTotal;
         const annualIn = monthlyIn * 12;
 
-        for (let i = 0; i <= 10; i++) {
+        for (let i = 0; i <= 50; i++) {
             labels.push(`Year ${i}`);
             points.push(Math.round(balance));
-            balance = (balance + annualIn) * (1 + rate);
+            balance = (balance + annualIn) * (5 + rate);
         }
 
         if (chart) chart.destroy();
