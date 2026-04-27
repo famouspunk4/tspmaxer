@@ -207,7 +207,7 @@
         for (let i = 0; i <= 50; i++) {
             labels.push(`Year ${i}`);
             points.push(Math.round(balance));
-            balance = (balance + annualIn) * (5 + rate);
+            balance = (balance + annualIn) * (1 + rate);
         }
 
         if (chart) chart.destroy();
